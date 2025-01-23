@@ -1,3 +1,4 @@
+from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.compose import ColumnTransformer
@@ -6,9 +7,8 @@ from sklearn.impute import SimpleImputer
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report
 import pandas as pd
-from sklearn.linear_model import LogisticRegression, LinearRegression
-
-
+from imblearn.over_sampling import SMOTE
+from imblearn.pipeline import Pipeline as ImbPipeline
 
 # prediction model
 df = pd.read_csv('pokemon.csv')
@@ -35,17 +35,19 @@ numeric_features = ['attack', 'defense', 'hp', 'speed', 'name_length']
 preprocessor = ColumnTransformer(
     transformers=[
         ('num', SimpleImputer(strategy='mean'), numeric_features),
-        ('cat', OneHotEncoder(handle_unknown='ignore'), categorical_features)  # Add handle_unknown='ignore'
+        ('cat', OneHotEncoder(handle_unknown='ignore'), categorical_features)
     ])
-
-# Create a pipeline with preprocessing and model
-model = Pipeline(steps=[
-    ('preprocessor', preprocessor),
-    ('classifier', RandomForestClassifier(random_state=42))
-])
 
 # Split the data into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Create a pipeline with preprocessing, SMOTE, and model using imblearn pipeline
+model = ImbPipeline(steps=[
+    ('preprocessor', preprocessor),
+    ('smote', SMOTE(random_state=42)),
+    ('classifier', LogisticRegression(random_state=42))
+])
+
 # Train the model
 model.fit(X_train, y_train)
 
@@ -69,15 +71,56 @@ test_data = pd.DataFrame({
 
 # Adding legendary Pokémon (Mewtwo)
 legendary_data = pd.DataFrame({
-    'name': ['Mewtwo', 'Lugia', 'Rayquaza', 'Articuno', 'Moltres'],
-    'type1': ['Psychic', 'Psychic', 'Dragon', 'Ice', 'Fire'],
-    'type2': ['None', 'Flying', 'Flying', 'Flying', 'Flying'],
-    'attack': [154, 90, 150, 100, 100],
-    'defense': [60, 130, 90, 85, 90],
-    'hp': [106, 106, 105, 90, 90],
-    'speed': [130, 110, 95, 85, 90],
-    'name_length': [7, 4, 8, 8, 7]  # Length of the name
+    'name': [
+        'Mewtwo', 'Lugia', 'Rayquaza', 'Articuno', 'Moltres',
+        'Zapdos', 'Ho-Oh', 'Groudon', 'Kyogre', 'Dialga',
+        'Palkia', 'Giratina', 'Reshiram', 'Zekrom', 'Xerneas',
+        'Yveltal', 'Zygarde', 'Solgaleo', 'Lunala', 'Eternatus'
+    ],
+    'type1': [
+        'Psychic', 'Psychic', 'Dragon', 'Ice', 'Fire',
+        'Electric', 'Fire', 'Ground', 'Water', 'Steel',
+        'Water', 'Ghost', 'Dragon', 'Dragon', 'Fairy',
+        'Dark', 'Dragon', 'Psychic', 'Ghost', 'Poison'
+    ],
+    'type2': [
+        'None', 'Flying', 'Flying', 'Flying', 'Flying',
+        'Flying', 'Flying', 'None', 'None', 'Dragon',
+        'Dragon', 'Dragon', 'Fire', 'Electric', 'None',
+        'Flying', 'Ground', 'Steel', 'Psychic', 'Dragon'
+    ],
+    'attack': [
+        154, 90, 150, 100, 100,
+        125, 130, 150, 150, 120,
+        120, 120, 120, 120, 131,
+        131, 100, 137, 137, 145
+    ],
+    'defense': [
+        60, 130, 120, 85, 90,
+        90, 90, 140, 90, 120,
+        100, 120, 100, 100, 98,
+        95, 121, 107, 107, 95
+    ],
+    'hp': [
+        106, 106, 155, 90, 90,
+        90, 106, 100, 100, 100,
+        90, 150, 100, 100, 126,
+        126, 108, 137, 137, 140
+    ],
+    'speed': [
+        130, 110, 95, 85, 90,
+        100, 90, 90, 90, 90,
+        100, 90, 90, 90, 99,
+        99, 95, 97, 97, 130
+    ],
+    'name_length': [
+        len('Mewtwo'), len('Lugia'), len('Rayquaza'), len('Articuno'), len('Moltres'),
+        len('Zapdos'), len('Ho-Oh'), len('Groudon'), len('Kyogre'), len('Dialga'),
+        len('Palkia'), len('Giratina'), len('Reshiram'), len('Zekrom'), len('Xerneas'),
+        len('Yveltal'), len('Zygarde'), len('Solgaleo'), len('Lunala'), len('Eternatus')
+    ]
 })
+
 
 # Append legendary Pokémon to the test_data
 test_data = pd.concat([test_data, legendary_data], ignore_index=True)
